@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { ToastController } from '@ionic/angular';
 
 import Grocery from '@models/grocery';
@@ -10,24 +10,24 @@ import { ToastClass } from '@types';
   templateUrl: 'grocery.page.html',
   styleUrls: ['grocery.page.scss']
 })
-export class GroceryPage implements OnInit {
+export class GroceryPage {
   groceries: Array<Grocery> = [];
 
   constructor(
       private toastController: ToastController,
       private groceryItemService: GroceryItemService,
       private groceryDialogService: GroceryDialogService
-  ) { }
-
-  async ngOnInit() {
-    this.groceries = await this.groceryItemService.getAll();
+  ) {
+    // Set the initial value of the groceries array and subscribe to updates to it
+    this.groceryItemService.getAll()
+      .then((groceries: Array<Grocery>) => this.groceries = groceries);
+    this.groceryItemService.groceries.subscribe(groceries => this.groceries = groceries);
   }
 
   async addGroceryItem() {
     const item: Grocery = await this.groceryDialogService.addGroceryItem();
     if (item) {
       this.displayToastMessage(`Grocery item '${item.name}' was added`, ToastClass.ADD_ITEM);
-      await this._updateGroceries();
     }
   }
 
@@ -35,15 +35,12 @@ export class GroceryPage implements OnInit {
     const item: Grocery = await this.groceryDialogService.editGroceryItem(groceryItem);
     if (item) {
       this.displayToastMessage(`Grocery item '${item.name}' was updated`, ToastClass.UPDATE_ITEM);
-      await this._updateGroceries();
     }
   }
 
   async deleteGroceryItem(groceryItem: Grocery) {
     await this.groceryItemService.delete(groceryItem);
     this.displayToastMessage(`Grocery item '${groceryItem.name}' was removed`, ToastClass.REMOVE_ITEM);
-
-    await this._updateGroceries();
   }
 
   addQuantityToGroceryItem(grocery: Grocery) {
@@ -63,9 +60,5 @@ export class GroceryPage implements OnInit {
       color: messageClass,
       duration: 3000
     }).then((ctrl) => ctrl.present());
-  }
-
-  private async _updateGroceries() {
-    this.groceries = await this.groceryItemService.getAll();
   }
 }
